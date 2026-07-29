@@ -1,0 +1,52 @@
+[
+  {
+    "file": "sample-welcome.pdf",
+    "thumbnail": "sample-welcome.png",
+    "title": "Welcome to PDF Studio",
+    "page_count": 1,
+    "source_type": "native",
+    "pages": [
+      {
+        "width": 612.0,
+        "height": 792.0
+      }
+    ],
+    "size_bytes": 3105
+  },
+  {
+    "file": "sample-quarterly-report.pdf",
+    "thumbnail": "sample-quarterly-report.png",
+    "title": "Quarterly Report",
+    "page_count": 3,
+    "source_type": "native",
+    "pages": [
+      {
+        "width": 612.0,
+        "height": 792.0
+      },
+      {
+        "width": 612.0,
+        "height": 792.0
+      },
+      {
+        "width": 612.0,
+        "height": 792.0
+      }
+    ],
+    "size_bytes": 4399
+  },
+  {
+    "file": "sample-invoice.pdf",
+    "thumbnail": "sample-invoice.png",
+    "title": "Service Invoice",
+    "page_count": 1,
+    "source_type": "native",
+    "pages": [
+      {
+        "width": 612.0,
+        "height": 792.0
+      }
+    ],
+    "size_bytes": 4916
+  }
+]

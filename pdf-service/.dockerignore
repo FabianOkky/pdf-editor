@@ -1,0 +1,24 @@
+# Virtualenvs & caches (the image installs deps fresh).
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+
+# Local environment & secrets.
+.env
+.env.*
+!.env.example
+
+# Runtime artifacts & large data (mounted as volumes at runtime).
+.ocr_cache
+tessdata/*.traineddata
+
+# Tests & docs not needed at runtime.
+tests
+README.md
+
+# OS noise.
+.DS_Store
+Thumbs.db

@@ -1,0 +1,22 @@
+# PDF service dependencies.
+# Install into a venv:  pip install -r requirements.txt
+fastapi
+uvicorn[standard]
+pymupdf
+python-dotenv
+python-multipart
+# --- Word export (Phase 5) ---
+# pdf2docx pulls in python-docx, numpy, opencv-python-headless, fonttools.
+# OCR uses PyMuPDF's bundled Tesseract engine — no system Tesseract/Ghostscript needed,
+# only the language data files (e.g. eng.traineddata); see README "OCR & Word export".
+pdf2docx
+# --- AI assistant (Phase 6) ---
+# Official Anthropic SDK for Claude (chat / summarize / translate). Pure-Python (httpx-based).
+# Embeddings default to a local hashing function (no extra dep); Voyage AI is optional via httpx.
+# The provider key (ANTHROPIC_API_KEY) lives only in this service — never in Laravel/the browser.
+anthropic
+# --- dev / test ---
+pytest
+httpx
+ruff
+black
