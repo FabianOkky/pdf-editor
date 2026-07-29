@@ -25,6 +25,24 @@ jobs:
       matrix:
         php-version: ['8.4', '8.5']
 
+    # phpunit.xml points the suite at PostgreSQL (pdf_editor_test), so the job needs a
+    # live server. Plain postgres is enough — the vector store is portable JSON, not pgvector.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: pdf_editor_test
+          POSTGRES_USER: postgres
+          # .env.example ships an empty DB_PASSWORD, so allow password-less local connections.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
