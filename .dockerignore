@@ -1,0 +1,35 @@
+# Dependencies & build output (reinstalled / rebuilt inside the image).
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+
+# Local environment & secrets.
+.env
+.env.*
+!.env.example
+
+# VCS, tooling & docs not needed at runtime.
+.git
+.gitignore
+.gitattributes
+.github
+.claude
+/docs
+/tests
+/.phpunit.cache
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/app/pdfs/*
+
+# Python service is built from its own context.
+/pdf-service
+
+# Editor / OS noise.
+.idea
+.vscode
+.DS_Store
+Thumbs.db

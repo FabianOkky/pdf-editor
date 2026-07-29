@@ -1,0 +1,30 @@
+# Tool configuration only. Dependencies are managed via requirements.txt + venv
+# (see ARCHITECTURE.md §8). This file does NOT make the service a packaged project.
+
+[tool.black]
+line-length = 100
+target-version = ["py312", "py313", "py314"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+# FastAPI uses callables (Depends/Header/Query/...) as argument defaults by design;
+# tell flake8-bugbear (B008) to treat them as immutable so it stops flagging them.
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Header",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.File",
+    "fastapi.Form",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
