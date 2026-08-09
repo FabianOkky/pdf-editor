@@ -51,7 +51,10 @@ export function pageManager({ url }) {
         },
 
         destroy() {
-            refs.pdf?.destroy();
+            // PDF.js v6 moved teardown onto the loading task — `PDFDocumentProxy` itself has no
+            // `destroy()`. It resolves asynchronously, and a teardown race is harmless, so the
+            // rejection is swallowed rather than surfacing as an unhandled promise error.
+            refs.pdf?.loadingTask?.destroy().catch(() => {});
         },
 
         /** Render every page into a draggable tile and reset the working state. */

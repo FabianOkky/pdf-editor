@@ -18,23 +18,26 @@
     ];
 @endphp
 
-<div class="flex h-full w-full flex-1 flex-col gap-4">
+<div class="mx-auto flex h-full w-full max-w-[110rem] flex-1 flex-col gap-4">
     {{-- Header --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex min-w-0 items-center gap-3">
-            <flux:button :href="route('documents.show', $document)" wire:navigate variant="ghost" size="sm" icon="arrow-left">
+            <flux:button :href="route('documents.show', $document)" wire:navigate variant="ghost" size="sm" icon="arrow-left" inset="left">
                 {{ __('Back') }}
             </flux:button>
+            <div class="h-5 w-px bg-zinc-200 dark:bg-zinc-800"></div>
             <div class="min-w-0">
-                <flux:heading class="truncate" title="{{ $document->title }}">{{ __('Edit document') }}</flux:heading>
-                <flux:text class="truncate">{{ $document->title }}</flux:text>
+                <h1 class="truncate text-lg font-semibold tracking-tight">{{ __('Edit document') }}</h1>
+                <p class="truncate text-sm text-zinc-500 dark:text-zinc-500" title="{{ $document->title }}">{{ $document->title }}</p>
             </div>
         </div>
     </div>
 
-    <div class="flex items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-        <flux:icon name="information-circle" class="mt-0.5 size-5 shrink-0 text-zinc-400" />
-        <span>{{ __('Add edits on top of the page — your original stays untouched. Edits autosave and are flattened into a new downloadable version when you export.') }}</span>
+    <div class="flex items-start gap-2.5 rounded-xl border border-zinc-200 bg-white p-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+        <flux:icon name="information-circle" class="mt-0.5 size-5 shrink-0 text-lapis-600 dark:text-lapis-400" />
+        <span>
+            {{ __('Edits sit on a layer above the page and autosave as you work — your original is never touched. Hit “Apply edits” to stamp them onto a new version; until you do, downloads and Word exports still show the unedited file.') }}
+        </span>
     </div>
 
     <flux:error name="overlays" />
@@ -44,10 +47,10 @@
     <div
         wire:ignore
         x-data="pdfEditor({ url: @js($activeUrl), pageCount: {{ $document->activePageCount() }}, overlays: @js($this->overlays), signatures: @js($this->savedSignatures) })"
-        class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950"
+        class="bg-stage flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800"
     >
         {{-- Toolbar --}}
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900">
             <div class="flex flex-wrap items-center gap-1">
                 <flux:button size="sm" icon="cursor-arrow-rays" :tooltip="__('Select')" x-bind:variant="tool === 'select' ? 'primary' : 'ghost'" x-on:click="setTool('select')" />
                 <flux:button size="sm" icon="pencil-square" :tooltip="__('Edit existing text')" x-bind:variant="tool === 'edittext' ? 'primary' : 'ghost'" x-on:click="setTool('edittext')" />
@@ -97,9 +100,9 @@
                     <flux:button size="sm" variant="ghost" icon="magnifying-glass-plus" x-on:click="zoomIn()" />
                 </div>
 
-                <flux:button size="sm" variant="primary" icon="arrow-down-tray" x-on:click="saveAndBake()" x-bind:disabled="baking || overlays.length === 0">
-                    <span x-show="!baking">{{ __('Download edited PDF') }}</span>
-                    <span x-show="baking" x-cloak>{{ __('Exporting…') }}</span>
+                <flux:button size="sm" variant="primary" icon="check" x-on:click="saveAndBake()" x-bind:disabled="baking || overlays.length === 0">
+                    <span x-show="!baking">{{ __('Apply edits') }}</span>
+                    <span x-show="baking" x-cloak>{{ __('Applying…') }}</span>
                 </flux:button>
             </div>
         </div>
@@ -135,7 +138,7 @@
                             <div
                                 class="absolute"
                                 x-bind:style="boxStyle(overlay)"
-                                x-bind:class="{ 'outline outline-2 outline-blue-500': overlay.id === selectedId, 'cursor-move': tool === 'select' && overlay.type !== 'text' && overlay.type !== 'form_field', 'outline-dashed outline-1 outline-sky-400/80': overlay.type === 'form_field' && overlay.id !== selectedId }"
+                                x-bind:class="{ 'outline outline-2 outline-lapis-500': overlay.id === selectedId, 'cursor-move': tool === 'select' && overlay.type !== 'text' && overlay.type !== 'form_field', 'outline-dashed outline-1 outline-sky-400/80': overlay.type === 'form_field' && overlay.id !== selectedId }"
                                 x-on:pointerdown="onRectPointerDown(overlay, $event)"
                             >
                                 {{-- whiteout --}}
@@ -214,7 +217,7 @@
                                     type="button"
                                     x-show="overlay.id === selectedId && overlay.type === 'text'"
                                     x-on:pointerdown.stop.prevent="startMove(overlay, $event)"
-                                    class="absolute -left-3 -top-3 flex size-5 cursor-move items-center justify-center rounded-full bg-blue-500 text-white shadow"
+                                    class="absolute -left-3 -top-3 flex size-5 cursor-move items-center justify-center rounded-full bg-lapis-500 text-white shadow"
                                     title="{{ __('Move') }}"
                                 >
                                     <flux:icon name="arrows-pointing-out" class="size-3" />
@@ -224,7 +227,7 @@
                                 <div
                                     x-show="overlay.id === selectedId && canResize(overlay)"
                                     x-on:pointerdown.stop.prevent="startResize(overlay, $event)"
-                                    class="absolute -bottom-1.5 -right-1.5 size-3 cursor-se-resize rounded-sm border border-white bg-blue-500"
+                                    class="absolute -bottom-1.5 -right-1.5 size-3 cursor-se-resize rounded-sm border border-white bg-lapis-500"
                                 ></div>
                             </div>
                         </template>
@@ -283,7 +286,7 @@
                         {{-- draft rect preview --}}
                         <template x-if="draft && draft.preview && draft.preview.kind === 'rect'">
                             <div
-                                class="pointer-events-none absolute border-2 border-dashed border-blue-500/70 bg-blue-500/10"
+                                class="pointer-events-none absolute border-2 border-dashed border-lapis-500/70 bg-lapis-500/10"
                                 x-bind:style="`left:${draft.preview.left}px;top:${draft.preview.top}px;width:${draft.preview.width}px;height:${draft.preview.height}px;`"
                             ></div>
                         </template>
@@ -292,7 +295,7 @@
             </div>
 
             {{-- Properties panel --}}
-            <div class="hidden w-60 shrink-0 overflow-y-auto border-s border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900 md:block">
+            <div class="hidden w-60 shrink-0 overflow-y-auto border-s border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 md:block">
                 <div x-show="!selected" class="text-sm text-zinc-400">
                     {{ __('Select an edit to change its style, or pick a tool to add one.') }}
                 </div>
@@ -303,7 +306,7 @@
                     {{-- Color --}}
                     <label x-show="colorKey" class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">
                         {{ __('Color') }}
-                        <input type="color" class="h-7 w-10 cursor-pointer rounded border border-zinc-200 dark:border-zinc-700" x-bind:value="selected && colorKey ? (selected.payload[colorKey] || '#000000') : '#000000'" x-on:input="updatePayload(colorKey, $event.target.value)" />
+                        <input type="color" class="h-7 w-10 cursor-pointer rounded border border-zinc-200 dark:border-zinc-800" x-bind:value="selected && colorKey ? (selected.payload[colorKey] || '#000000') : '#000000'" x-on:input="updatePayload(colorKey, $event.target.value)" />
                     </label>
 
                     {{-- Fill (shapes) --}}
@@ -315,7 +318,7 @@
                             </label>
                             <label x-show="selected.payload.fill" class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">
                                 {{ __('Fill color') }}
-                                <input type="color" class="h-7 w-10 cursor-pointer rounded border border-zinc-200 dark:border-zinc-700" x-bind:value="selected.payload.fill || '#fde047'" x-on:input="updatePayload('fill', $event.target.value)" />
+                                <input type="color" class="h-7 w-10 cursor-pointer rounded border border-zinc-200 dark:border-zinc-800" x-bind:value="selected.payload.fill || '#fde047'" x-on:input="updatePayload('fill', $event.target.value)" />
                             </label>
                         </div>
                     </template>
@@ -325,7 +328,7 @@
                         <div class="flex flex-col gap-2">
                             <label class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">
                                 {{ __('Font') }}
-                                <select class="w-28 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800" x-bind:value="selected.payload.font || 'sans'" x-on:change="updatePayload('font', $event.target.value)">
+                                <select class="w-28 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-800" x-bind:value="selected.payload.font || 'sans'" x-on:change="updatePayload('font', $event.target.value)">
                                     <option value="sans">{{ __('Sans-serif') }}</option>
                                     <option value="serif">{{ __('Serif') }}</option>
                                     <option value="mono">{{ __('Monospace') }}</option>
@@ -333,7 +336,7 @@
                             </label>
                             <label class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">
                                 {{ __('Font size') }}
-                                <input type="number" min="6" max="96" class="w-20 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800" x-bind:value="selected.payload.font_size" x-on:change="updatePayload('font_size', Number($event.target.value))" />
+                                <input type="number" min="6" max="96" class="w-20 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-800" x-bind:value="selected.payload.font_size" x-on:change="updatePayload('font_size', Number($event.target.value))" />
                             </label>
                             <div class="flex items-center gap-1">
                                 <flux:button size="sm" x-bind:variant="selected.payload.bold ? 'primary' : 'ghost'" x-on:click="updatePayload('bold', !selected.payload.bold)">B</flux:button>
@@ -348,7 +351,7 @@
                     {{-- Stroke width --}}
                     <label x-show="hasStrokeWidth" class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">
                         {{ __('Thickness') }}
-                        <input type="number" min="0.5" max="20" step="0.5" class="w-20 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800" x-bind:value="selected?.payload?.stroke_width" x-on:change="updatePayload('stroke_width', Number($event.target.value))" />
+                        <input type="number" min="0.5" max="20" step="0.5" class="w-20 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-800" x-bind:value="selected?.payload?.stroke_width" x-on:change="updatePayload('stroke_width', Number($event.target.value))" />
                     </label>
 
                     {{-- Opacity --}}
@@ -420,7 +423,7 @@
                             <button
                                 type="button"
                                 class="rounded-md border px-3 py-1.5 text-sm"
-                                x-bind:class="typeFont === font.stack ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' : 'border-zinc-300 dark:border-zinc-600'"
+                                x-bind:class="typeFont === font.stack ? 'border-lapis-500 bg-lapis-50 dark:bg-lapis-950' : 'border-zinc-300 dark:border-zinc-600'"
                                 x-bind:style="`font-family:${font.stack}`"
                                 x-on:click="typeFont = font.stack"
                                 x-text="font.label"
@@ -461,11 +464,11 @@
                 </div>
 
                 {{-- Saved signatures --}}
-                <div x-show="signatures.length" x-cloak class="flex flex-col gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                <div x-show="signatures.length" x-cloak class="flex flex-col gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
                     <flux:text class="text-sm">{{ __('Saved signatures') }}</flux:text>
                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         <template x-for="sig in signatures" :key="sig.id">
-                            <div class="group relative flex h-16 items-center justify-center rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
+                            <div class="group relative flex h-16 items-center justify-center rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-800">
                                 <button type="button" class="flex h-full w-full items-center justify-center" x-on:click="placeSaved(sig)" x-bind:title="sig.name">
                                     <img x-bind:src="sig.data" class="max-h-full max-w-full" alt="" />
                                 </button>

@@ -2,7 +2,7 @@
   {
     "file": "sample-welcome.pdf",
     "thumbnail": "sample-welcome.png",
-    "title": "Welcome to PDF Studio",
+    "title": "Welcome to Lapis",
     "page_count": 1,
     "source_type": "native",
     "pages": [
@@ -11,7 +11,7 @@
         "height": 792.0
       }
     ],
-    "size_bytes": 3105
+    "size_bytes": 3099
   },
   {
     "file": "sample-quarterly-report.pdf",

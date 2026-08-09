@@ -1,39 +1,58 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
-        <div class="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
-            <div class="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-e dark:border-neutral-800">
-                <div class="absolute inset-0 bg-neutral-900"></div>
-                <a href="{{ route('home') }}" class="relative z-20 flex items-center text-lg font-medium" wire:navigate>
-                    <span class="flex h-10 w-10 items-center justify-center rounded-md">
-                        <x-app-logo-icon class="me-2 h-7 fill-current text-white" />
+    <body class="min-h-screen bg-zinc-50 antialiased dark:bg-zinc-950">
+        <div class="relative grid min-h-dvh lg:grid-cols-2">
+            {{-- Brand panel: states the product's promise instead of a random inspirational quote. --}}
+            <div class="relative hidden flex-col justify-between overflow-hidden bg-lapis-700 p-10 text-white lg:flex dark:bg-lapis-900">
+                <div class="bg-grid pointer-events-none absolute inset-0 opacity-10"></div>
+
+                <a href="{{ route('home') }}" class="relative z-10 flex items-center gap-2.5 font-semibold" wire:navigate>
+                    <span class="flex aspect-square size-8 items-center justify-center rounded-lg bg-white/15">
+                        <x-app-logo-icon class="size-5" />
                     </span>
-                    {{ config('app.name', 'Laravel') }}
+                    {{ config('app.name', 'Lapis') }}
                 </a>
 
-                @php
-                    [$message, $author] = str(Illuminate\Foundation\Inspiring::quotes()->random())->explode('-');
-                @endphp
+                <div class="relative z-10 max-w-md">
+                    <h2 class="text-3xl font-semibold leading-tight tracking-tight">
+                        {{ __('Edit PDFs without breaking them.') }}
+                    </h2>
+                    <p class="mt-4 text-base leading-relaxed text-lapis-100">
+                        {{ __('Your original file is never rewritten. Edits live as a layer on top and are flattened onto a copy only when you ask — so fonts, lines and layout survive intact.') }}
+                    </p>
 
-                <div class="relative z-20 mt-auto">
-                    <blockquote class="space-y-2">
-                        <flux:heading size="lg">&ldquo;{{ trim($message) }}&rdquo;</flux:heading>
-                        <footer><flux:heading>{{ trim($author) }}</flux:heading></footer>
-                    </blockquote>
+                    <ul class="mt-8 space-y-3">
+                        @foreach ([
+                            __('Live overlay editing, forms and signatures'),
+                            __('OCR and smart PDF → Word export'),
+                            __('An AI assistant that cites its pages'),
+                        ] as $point)
+                            <li class="flex items-center gap-3 text-sm text-lapis-100">
+                                <flux:icon name="check-circle" class="size-4 shrink-0 text-white" />
+                                {{ $point }}
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
-            </div>
-            <div class="w-full lg:p-8">
-                <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-                    <a href="{{ route('home') }}" class="z-20 flex flex-col items-center gap-2 font-medium lg:hidden" wire:navigate>
-                        <span class="flex h-9 w-9 items-center justify-center rounded-md">
-                            <x-app-logo-icon class="size-9 fill-current text-black dark:text-white" />
-                        </span>
 
-                        <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
+                <p class="relative z-10 text-xs text-lapis-200">
+                    &copy; {{ date('Y') }} {{ config('app.name', 'Lapis') }}
+                </p>
+            </div>
+
+            {{-- Form panel --}}
+            <div class="flex w-full items-center justify-center px-6 py-12">
+                <div class="flex w-full max-w-sm flex-col gap-8">
+                    <a href="{{ route('home') }}" class="flex items-center justify-center gap-2.5 font-semibold lg:hidden" wire:navigate>
+                        <span class="flex aspect-square size-8 items-center justify-center rounded-lg bg-lapis-600 text-white dark:bg-lapis-500">
+                            <x-app-logo-icon class="size-5" />
+                        </span>
+                        {{ config('app.name', 'Lapis') }}
                     </a>
+
                     {{ $slot }}
                 </div>
             </div>

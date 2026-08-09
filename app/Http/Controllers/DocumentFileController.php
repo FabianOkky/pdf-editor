@@ -30,9 +30,26 @@ class DocumentFileController extends Controller
     }
 
     /**
-     * Download the original PDF as an attachment.
+     * Download the document as it currently stands — the latest baked version if the user has
+     * applied any edits, otherwise the original upload. Downloading the pristine original is a
+     * separate, explicit action ({@see downloadOriginal()}), because "Download" on an edited
+     * document must hand back the edited file.
      */
     public function download(Document $document): StreamedResponse
+    {
+        $disk = Storage::disk($document->disk);
+        $path = $document->activePath();
+
+        abort_unless($disk->exists($path), 404);
+
+        return $disk->download($path, $this->downloadName($document));
+    }
+
+    /**
+     * Download the immutable original upload, ignoring every edit made since (the Golden Rule
+     * means it is always still there, byte-for-byte).
+     */
+    public function downloadOriginal(Document $document): StreamedResponse
     {
         $disk = Storage::disk($document->disk);
 
@@ -107,5 +124,15 @@ class DocumentFileController extends Controller
     protected function versionFilename(Document $document, DocumentVersion $version): string
     {
         return $document->title.' (v'.$version->version_number.').pdf';
+    }
+
+    /**
+     * A friendly ".pdf" download name derived from the document title.
+     */
+    protected function downloadName(Document $document): string
+    {
+        $title = trim($document->title);
+
+        return ($title === '' ? 'document' : $title).'.pdf';
     }
 }

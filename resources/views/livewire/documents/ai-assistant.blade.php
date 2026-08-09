@@ -1,28 +1,33 @@
-<div class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+<div class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
     {{-- Header --}}
-    <div class="flex items-center justify-between gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+    <div class="flex items-center justify-between gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         <div class="flex items-center gap-2">
-            <flux:icon name="sparkles" class="size-5 text-indigo-500" />
+            <flux:icon name="sparkles" class="size-5 text-lapis-600 dark:text-lapis-400" />
             <flux:heading size="sm">{{ __('AI Assistant') }}</flux:heading>
         </div>
         <flux:button size="sm" variant="ghost" icon="x-mark" x-on:click="aiOpen = false" :tooltip="__('Close')" />
     </div>
 
     {{-- Tabs --}}
-    <div class="flex gap-1 border-b border-zinc-200 px-2 py-2 dark:border-zinc-700">
-        @foreach (['chat' => __('Chat'), 'summarize' => __('Summarize'), 'translate' => __('Translate')] as $key => $label)
-            <flux:button
-                size="sm"
-                class="flex-1"
-                :variant="$tab === $key ? 'primary' : 'ghost'"
-                wire:click="$set('tab', '{{ $key }}')"
-            >{{ $label }}</flux:button>
-        @endforeach
+    <div class="border-b border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
+        <div class="flex gap-0.5 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
+            @foreach (['chat' => __('Chat'), 'summarize' => __('Summarize'), 'translate' => __('Translate')] as $key => $label)
+                <button
+                    type="button"
+                    wire:click="$set('tab', '{{ $key }}')"
+                    @class([
+                        'flex-1 rounded-md px-2 py-1.5 text-sm font-medium transition',
+                        'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' => $tab === $key,
+                        'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200' => $tab !== $key,
+                    ])
+                >{{ $label }}</button>
+            @endforeach
+        </div>
     </div>
 
     {{-- LLM backend toggle (local Ollama vs cloud Gemini); remembered across requests. --}}
     @if (count($this->providers) > 1)
-        <div class="flex items-center gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-700">
+        <div class="flex items-center gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-800">
             <flux:icon name="cpu-chip" class="size-4 text-zinc-400" />
             <span class="text-xs font-medium text-zinc-500">{{ __('Model') }}</span>
             <div class="ms-auto flex gap-0.5 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
@@ -30,7 +35,7 @@
                     <button
                         type="button"
                         wire:click="$set('provider', '{{ $key }}')"
-                        :title="$meta['model']"
+                        title="{{ $meta['model'] }}"
                         @class([
                             'rounded-md px-2.5 py-1 text-xs font-medium transition',
                             'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-white' => $provider === $key,
@@ -50,7 +55,7 @@
                 @forelse ($this->messages as $message)
                     @if ($message->role === \App\Enums\AiMessageRole::User)
                         <div class="flex justify-end">
-                            <div class="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-indigo-600 px-3 py-2 text-sm text-white">{{ $message->content }}</div>
+                            <div class="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-lapis-600 px-3 py-2 text-sm text-white dark:bg-lapis-500">{{ $message->content }}</div>
                         </div>
                     @else
                         <div class="flex flex-col items-start gap-1">
@@ -78,7 +83,7 @@
             </div>
 
             {{-- Input --}}
-            <form wire:submit="ask" class="border-t border-zinc-200 px-3 py-3 dark:border-zinc-700">
+            <form wire:submit="ask" class="border-t border-zinc-200 px-3 py-3 dark:border-zinc-800">
                 <flux:error name="question" />
                 <div class="flex items-end gap-2">
                     <flux:textarea
@@ -130,7 +135,7 @@
                             </flux:text>
                             <flux:button size="sm" variant="ghost" icon="clipboard" x-on:click="navigator.clipboard.writeText(text)">{{ __('Copy') }}</flux:button>
                         </div>
-                        <div class="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100">{{ $summary }}</div>
+                        <div class="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">{{ $summary }}</div>
                     </div>
                 @endif
             </div>
@@ -173,7 +178,7 @@
                             </flux:text>
                             <flux:button size="sm" variant="ghost" icon="clipboard" x-on:click="navigator.clipboard.writeText(text)">{{ __('Copy') }}</flux:button>
                         </div>
-                        <div class="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100">{{ $translation }}</div>
+                        <div class="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">{{ $translation }}</div>
                     </div>
                 @endif
             </div>
@@ -181,7 +186,7 @@
     </div>
 
     {{-- Footer: honest "AI may be wrong" notice + model --}}
-    <div class="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-700">
+    <div class="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800">
         {{ __('AI can make mistakes. Verify important details against the document.') }}
         @if ($this->model)
             <span class="text-zinc-400 dark:text-zinc-500">· {{ __('Powered by :model', ['model' => $this->model]) }}</span>

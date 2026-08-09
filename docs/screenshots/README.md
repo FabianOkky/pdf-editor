@@ -22,7 +22,7 @@ as `demo@example.com` / `password`) and drop the PNGs/GIFs in this folder with t
 ## Tips
 
 - Use a clean browser window (no extensions toolbar) at ~1440px wide for crisp captures.
-- The committed sample documents (`Welcome to PDF Studio`, `Quarterly Report`, `Service Invoice`)
+- The committed sample documents (`Welcome to Lapis`, `Quarterly Report`, `Service Invoice`)
   are designed to demo every feature — the report is multi-page for page ops, the invoice is great
   for Word export.
 - Keep file sizes reasonable (compress PNGs; keep GIFs < ~5 MB) so the README loads fast.

@@ -6,7 +6,13 @@
 
 Legend: ⬜ Not started · 🟦 In progress · ✅ Done · ⚠️ Blocked
 
-_Last updated: 2026-06-26 — **Post-phase user-reported fixes** (see Decisions log 2026-06-26): overlay
+_Last updated: 2026-08-09 — **Rebrand + edited-output fixes** (see Decisions log 2026-08-09): the app is
+now **"Lapis"** with a custom mark, a warm-paper + lapis-blue design system, and a rebuilt landing /
+auth / dashboard / library / viewer UI; **"Download" and "Export to Word" now carry the user's edits**
+(they used to hand back the pristine original); the **DOCX export** gained real page geometry, per-span
+type, column-aware reading order, per-page mixed handling and converter fallbacks. Gates green (Pest
+150/1 skip, pytest 93, larastan 0, Pint, ruff+black, build). — Prior: 2026-06-26 **Post-phase
+user-reported fixes** (see Decisions log 2026-06-26): overlay
 editor reversed-text bug fixed + edit-text font/size matching; AI provider runtime toggle (Local Ollama
 ↔ Gemini) replacing the static env choice; Word export now recovers partial dropped words. All gates
 green (Pest 141/1, pytest 85, larastan 0, Pint, ruff+black, build). — Prior: **Phase 7 done (Polish, tests, deploy, portfolio)**. Portfolio **landing
@@ -99,6 +105,54 @@ Tick these as they come into existence so phases don't rebuild them.
 ## Decisions log
 
 Record any resolved "open decision" here with date + rationale.
+
+- 2026-08-09: **Rebrand to "Lapis" + the edited-output fixes (user-reported).**
+  (1) **"My edits never come out" — the root cause was two separate leaks.** `DocumentFileController::
+  download()` streamed `$document->path`, i.e. the *original*, so "Download" on an edited document
+  always handed back the pre-edit file; it now streams `activePath()` and the pristine original moved
+  to its own explicit route (`documents.download.original`, linked from the Versions modal and the
+  library menu). Separately, both download and Word export read the document's **bytes**, which only
+  carry edits once the overlay layer is flattened — so any *unapplied* overlay silently vanished from
+  the output. Fixed on three fronts: the viewer shows a **pending-edits banner** with a one-click
+  "Apply edits" (`Show::pendingEditCount()` / `applyEdits()` / `applyEditsAndRefresh()`);
+  `Show::exportToWord()` **bakes pending overlays before queueing** (and does not queue if the bake
+  fails); and the toolbar "Download" became `Show::downloadEdited()`, which applies first, then streams.
+  The editor's misleading "Download edited PDF" button (it never downloaded — it baked and redirected)
+  is now "Apply edits", and the editor's info banner states plainly that downloads/exports show the
+  unedited file until you apply. Covered by `tests/Feature/Documents/EditedOutputTest.php`.
+  (2) **DOCX export quality.** The OCR/fallback renderer was `add_paragraph(block_text)` per block —
+  everything came out as same-size unstyled paragraphs on a US-Letter page. It is now `_layout_to_docx`:
+  real page size + orientation + margins derived from where the text sits, character-weighted median
+  font size per block, bold/italic from span flags and font names, alignment inferred from the block's
+  position in the text column, headings at ≥1.22× the body size, intra-block line breaks, and a
+  column-aware reading order (two columns only when every block sits clear of the page midline, so a
+  wide table or a centred title cannot trigger it). **Mixed PDFs are no longer OCR'd wholesale** — that
+  discarded every native page's layout; `_mixed_to_docx` runs pdf2docx on the file and OCRs *only* the
+  image-only pages (`_subset`), folding their text back through the recovery pass. **Robustness:**
+  a pdf2docx failure falls back to the span renderer instead of failing the export, and a mixed file
+  degrades to native-only when tessdata is missing. **Word comparison is now normalized** (ligatures
+  folded, NFKD + combining marks stripped, lowercased) so a PDF's "oﬃce"/"ﬁnal" ligature no longer
+  looks like text Word dropped and pads every export with a bogus "Recovered text" appendix.
+  (3) **Rebrand: "PDF Studio" → "Lapis"** (Indonesian for *layer* — the overlay architecture — and a
+  deep blue). `APP_NAME` in `.env`/`.env.example` (the dev `.env` still said `Laravel`), a custom
+  layered-page SVG mark replacing the **Laravel logo** that was still in `app-logo-icon.blade.php`, a
+  new `favicon.svg`, and regenerated demo samples. (4) **Design system.** The UI was stock starter-kit:
+  pure-neutral zinc + default indigo. `app.css` now defines a **warm paper neutral ramp** (documents
+  look grubby against a cold gray) and a **lapis** accent wired into Flux's `--color-accent`, plus
+  `bg-grid` / `bg-stage` / `text-balance-heading` utilities and tighter heading tracking. Landing page
+  rewritten (asymmetric hero with a drawn product mock, "how it works", capability grid, fidelity
+  comparison); auth switched to the **split** layout with a brand panel (the starter kit's random
+  `Inspiring::quotes()` is gone); dashboard, library, viewer, editor, organize and the AI panel
+  restyled. **`class="dark"` was hardcoded** on every layout `<html>`, which pinned the app to dark and
+  made the Appearance setting a no-op — removed, so `@fluxAppearance` decides. Starter-kit links to
+  `laravel/livewire-starter-kit` removed from the header layout.
+  (5) **Two live JS errors found while verifying in-browser** (both pre-existing): the AI panel's
+  provider chip used `:title="$meta['model']"` — the `:` made Alpine evaluate the *Blade* variable in
+  JS scope (`$meta is not defined`); and all three PDF.js components called `refs.pdf?.destroy()`, but
+  **PDF.js v6 has no `destroy()` on `PDFDocumentProxy`** — teardown moved to `pdf.loadingTask.destroy()`.
+  Browser-verified end to end: edit → banner → apply → the baked text/highlight render, and the Word
+  export of the applied version contains the edit with no spurious appendix. Gates: **Pest 150 pass/1
+  skip, pytest 93, larastan(L7) 0, Pint, ruff+black, `npm run build`** all green.
 
 - 2026-06-26: **Post-phase fixes (user-reported).** (1) **Reversed text-entry bug** in the overlay
   editor: the editable text `<div>` bound its content with `x-text="overlay.payload.text"`, so each

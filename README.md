@@ -1,10 +1,10 @@
-# PDF Studio
+# Lapis
 
-> **Edit your PDFs live in the browser — non-destructively.**
+> **Edit PDFs without breaking them.**
 > Upload, organize, annotate, fill forms, sign, OCR, export to Word, and chat with your
 > documents, without ever re-encoding the original file.
 
-PDF Studio is a portfolio web app. A signed-in user manages and **edits their own PDFs live in
+Lapis is a portfolio web app. A signed-in user manages and **edits their own PDFs live in
 the browser**, with pixel-perfect rendering, an **AI assistant**, and a **smart PDF → Word export**.
 It pairs a **Laravel 13 + Livewire 4** application with a **Python FastAPI** microservice for the
 work that must touch PDF bytes or run ML.
@@ -64,7 +64,7 @@ work that must touch PDF bytes or run ML.
 > overlay layer. Editing is non-destructive by default.**
 
 A PDF stores *positioned glyphs*, not a reflowable document. Re-encoding the whole file is what
-makes other editors corrupt fonts, lines and layout. PDF Studio avoids that entirely:
+makes other editors corrupt fonts, lines and layout. Lapis avoids that entirely:
 
 - The **original upload is immutable** — it is never overwritten.
 - Every edit is stored as **structured JSON overlay operations** in **PDF user space**
@@ -154,10 +154,20 @@ mismatches. The provider key for the LLM lives **only** in `pdf-service/.env`.
 PDF → Word is inherently lossy, so the goal is *best-effort and honest about it*. The trick is that
 **one converter does not fit both kinds of PDF**:
 
-- **Native (text) PDFs** → `pdf2docx`, which reconstructs a layout-aware `.docx`.
+- **Native (text) PDFs** → `pdf2docx`, which reconstructs a layout-aware `.docx`. Anything it silently
+  drops (runs that overlap a watermark or logo) is recovered into a labelled appendix, comparing words
+  with ligatures folded and accents stripped so a PDF's "oﬃce" is not mistaken for missing text.
 - **Scanned / image PDFs** → `pdf2docx` *refuses* them ("Words count: 0 … not supported"), so a naive
-  pipeline produces an empty file. PDF Studio instead **runs OCR first** (PyMuPDF's bundled Tesseract)
-  and then builds the `.docx` from the recognized text blocks with `python-docx`.
+  pipeline produces an empty file. Lapis instead **runs OCR first** (PyMuPDF's bundled Tesseract) and
+  rebuilds the document from the recognized spans with `python-docx` — carrying over the real page size
+  and orientation, margins taken from where the text sits, per-span font size and weight, detected
+  paragraph alignment, headings, and a column-aware reading order.
+- **Mixed PDFs** → both, page by page: `pdf2docx` converts the file so the native pages keep their
+  layout, and OCR runs on **only** the image-only pages, whose text is folded back in. (Previously the
+  whole file was OCR'd, throwing away every native page's layout.)
+
+If `pdf2docx` fails outright, the export falls back to the same span-rebuilding renderer rather than
+returning nothing, and a mixed file with no OCR data available still exports its native pages.
 
 The export endpoint detects the document's `source_type` and picks the path automatically; the chosen
 engine (`pdf2docx` or `ocr+python-docx`) is recorded on the job. Exports run **asynchronously**
