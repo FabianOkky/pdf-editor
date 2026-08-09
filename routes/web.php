@@ -27,6 +27,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('documents/{document}/download', [DocumentFileController::class, 'download'])
         ->middleware('can:download,document')
         ->name('documents.download');
+    Route::get('documents/{document}/download/original', [DocumentFileController::class, 'downloadOriginal'])
+        ->middleware('can:download,document')
+        ->name('documents.download.original');
     Route::get('documents/{document}/thumbnail', [DocumentFileController::class, 'thumbnail'])
         ->middleware('can:view,document')
         ->name('documents.thumbnail');

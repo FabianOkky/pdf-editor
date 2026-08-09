@@ -124,7 +124,7 @@ class Editor extends Component
         $this->authorize('update', $this->document);
 
         if ($this->document->overlays()->doesntExist()) {
-            $this->addError('bake', __('Add at least one edit before downloading.'));
+            $this->addError('bake', __('Add at least one edit before applying.'));
 
             return;
         }
@@ -133,12 +133,12 @@ class Editor extends Component
             $pageOperations->bake($this->document, Auth::user());
         } catch (Throwable $exception) {
             report($exception);
-            $this->addError('bake', __('We could not export your edits. Please try again.'));
+            $this->addError('bake', __('We could not apply your edits. Please try again.'));
 
             return;
         }
 
-        Flux::toast(variant: 'success', text: __('Edits baked into a new version.'));
+        Flux::toast(variant: 'success', text: __('Edits applied — saved as a new version.'));
         $this->redirectRoute('documents.show', $this->document, navigate: true);
     }
 

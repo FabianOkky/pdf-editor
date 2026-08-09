@@ -9,31 +9,57 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Lapis design tokens.
+ *
+ * Two deliberate choices carry the whole look. First, the neutral ramp is *warm* — a paper
+ * gray rather than a pure one — because the product is a document surface and a cold neutral
+ * makes rendered pages look grubby next to the chrome. Second, the accent is lapis: a deep,
+ * slightly violet blue that reads as ink at 600 and stays legible on dark backgrounds at 400.
+ */
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-    --color-zinc-50: #fafafa;
-    --color-zinc-100: #f5f5f5;
-    --color-zinc-200: #e5e5e5;
-    --color-zinc-300: #d4d4d4;
-    --color-zinc-400: #a3a3a3;
-    --color-zinc-500: #737373;
-    --color-zinc-600: #525252;
-    --color-zinc-700: #404040;
-    --color-zinc-800: #262626;
-    --color-zinc-900: #171717;
-    --color-zinc-950: #0a0a0a;
+    /* Warm "paper" neutrals — Flux and the app both address these as `zinc-*`. */
+    --color-zinc-50: #faf9f8;
+    --color-zinc-100: #f4f3f0;
+    --color-zinc-200: #e7e5e1;
+    --color-zinc-300: #d4d1cb;
+    --color-zinc-400: #a29e97;
+    --color-zinc-500: #757169;
+    --color-zinc-600: #55514b;
+    --color-zinc-700: #3f3b36;
+    --color-zinc-800: #272421;
+    --color-zinc-900: #191715;
+    --color-zinc-950: #0d0c0b;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
+    /* Lapis — the brand accent. */
+    --color-lapis-50: #eef2ff;
+    --color-lapis-100: #dee6ff;
+    --color-lapis-200: #c2d0ff;
+    --color-lapis-300: #9bb0fe;
+    --color-lapis-400: #7189fa;
+    --color-lapis-500: #4f63f0;
+    --color-lapis-600: #3a45dd;
+    --color-lapis-700: #2e35b6;
+    --color-lapis-800: #282f92;
+    --color-lapis-900: #262e74;
+    --color-lapis-950: #171b44;
+
+    --color-accent: var(--color-lapis-600);
+    --color-accent-content: var(--color-lapis-700);
     --color-accent-foreground: var(--color-white);
+
+    /* Page chrome behind a rendered PDF: a deep, neutral stage that flatters white paper. */
+    --color-stage: #eceae6;
+    --color-stage-dark: #131211;
 }
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        --color-accent: var(--color-lapis-500);
+        --color-accent-content: var(--color-lapis-300);
+        --color-accent-foreground: var(--color-white);
     }
 }
 
@@ -44,7 +70,45 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-zinc-200, currentColor);
+    }
+
+    .dark *,
+    .dark ::after,
+    .dark ::before,
+    .dark ::backdrop,
+    .dark ::file-selector-button {
+        border-color: var(--color-zinc-800, currentColor);
+    }
+
+    /* Headings are set tight; long-form copy is not. This one pairing does most of the work of
+       making the UI look typeset rather than defaulted. */
+    h1, h2, h3, [data-flux-heading] {
+        letter-spacing: -0.018em;
+    }
+}
+
+@utility text-balance-heading {
+    text-wrap: balance;
+}
+
+/*
+ * A faint blueprint grid, used behind the landing hero and empty states. Kept as a utility so
+ * the markup stays declarative and the two theme variants live in one place.
+ */
+@utility bg-grid {
+    background-image:
+        linear-gradient(to right, color-mix(in oklab, var(--color-zinc-400) 22%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklab, var(--color-zinc-400) 22%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+}
+
+/* The stage a PDF page sits on, in both themes. */
+@utility bg-stage {
+    background-color: var(--color-stage);
+
+    .dark & {
+        background-color: var(--color-stage-dark);
     }
 }
 
@@ -61,7 +125,3 @@ textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
 }
-
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */

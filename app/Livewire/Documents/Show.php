@@ -13,9 +13,11 @@ use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 /**
@@ -76,10 +78,63 @@ class Show extends Component
     }
 
     /**
-     * Queue a smart PDF → DOCX export. No-op while one is already running, so double-clicks
-     * (or an impatient poll) cannot stack jobs. The original document is never modified.
+     * How many overlay edits are saved but not yet applied (baked) into a version. Everything
+     * downstream — the rendered page, downloads, Word export — reads the document's *bytes*,
+     * so unapplied edits would otherwise be invisible. The viewer surfaces this count.
      */
-    public function exportToWord(): void
+    #[Computed]
+    public function pendingEditCount(): int
+    {
+        return $this->document->overlays()->count();
+    }
+
+    /**
+     * Flatten the saved-but-unapplied edits into a new version, so the document's bytes finally
+     * carry them. Returns whether the document is now up to date.
+     */
+    public function applyEdits(PageOperationService $pageOperations): bool
+    {
+        $this->authorize('update', $this->document);
+
+        if ($this->pendingEditCount() === 0) {
+            return true;
+        }
+
+        try {
+            $pageOperations->bake($this->document, Auth::user());
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->addError('apply', __('We could not apply your edits. Please try again.'));
+
+            return false;
+        }
+
+        unset($this->pendingEditCount, $this->versions, $this->activeUrl);
+
+        return true;
+    }
+
+    /**
+     * Apply pending edits and reload the viewer so the page shows the edited document.
+     */
+    public function applyEditsAndRefresh(PageOperationService $pageOperations): void
+    {
+        if (! $this->applyEdits($pageOperations)) {
+            return;
+        }
+
+        Flux::toast(variant: 'success', text: __('Edits applied — saved as a new version.'));
+
+        $this->redirectRoute('documents.show', $this->document, navigate: true);
+    }
+
+    /**
+     * Queue a smart PDF → DOCX export. Any saved-but-unapplied edits are baked in first, so the
+     * Word file reflects what the user actually sees and edited — exporting the pre-edit bytes
+     * was the single most confusing thing about this flow. No-op while a job is already running,
+     * so double-clicks (or an impatient poll) cannot stack jobs. The original is never modified.
+     */
+    public function exportToWord(PageOperationService $pageOperations): void
     {
         $this->authorize('view', $this->document);
 
@@ -88,6 +143,10 @@ class Show extends Component
             ->exists();
 
         if ($alreadyRunning) {
+            return;
+        }
+
+        if ($this->pendingEditCount() > 0 && ! $this->applyEdits($pageOperations)) {
             return;
         }
 
@@ -102,6 +161,26 @@ class Show extends Component
         unset($this->latestExport);
 
         Flux::toast(text: __('Preparing your Word document… we’ll have it ready shortly.'));
+    }
+
+    /**
+     * Download the document as the user sees it: pending edits are applied first, then the
+     * freshly baked bytes are streamed back.
+     */
+    public function downloadEdited(PageOperationService $pageOperations): ?StreamedResponse
+    {
+        $this->authorize('download', $this->document);
+
+        if (! $this->applyEdits($pageOperations)) {
+            return null;
+        }
+
+        $title = trim($this->document->title);
+
+        return Storage::disk($this->document->disk)->download(
+            $this->document->activePath(),
+            ($title === '' ? 'document' : $title).'.pdf',
+        );
     }
 
     /**

@@ -18,7 +18,7 @@ import fitz  # PyMuPDF
 OUT = Path(__file__).resolve().parent
 LETTER = fitz.paper_rect("letter")  # 612 x 792 points
 
-HEADING = (0.11, 0.16, 0.36)
+HEADING = (0.23, 0.27, 0.87)  # the Lapis accent
 BODY = (0.15, 0.15, 0.18)
 MUTED = (0.4, 0.4, 0.45)
 
@@ -36,7 +36,7 @@ def _text(
 def build_welcome() -> fitz.Document:
     doc = fitz.open()
     page = _page(doc)
-    _text(page, 72, 96, "Welcome to PDF Studio", size=26, color=HEADING, font="hebo")
+    _text(page, 72, 96, "Welcome to Lapis", size=26, color=HEADING, font="hebo")
     _text(
         page,
         72,
@@ -111,7 +111,7 @@ def build_invoice() -> fitz.Document:
     doc = fitz.open()
     page = _page(doc)
     _text(page, 72, 90, "INVOICE", size=28, color=HEADING, font="hebo")
-    _text(page, 72, 120, "PDF Studio LLC", size=11, color=MUTED)
+    _text(page, 72, 120, "Lapis Software", size=11, color=MUTED)
     _text(page, 430, 96, "Invoice #  INV-2026-014", size=11)
     _text(page, 430, 114, "Date       2026-06-22", size=11)
     _text(page, 430, 132, "Due        2026-07-22", size=11)
@@ -149,7 +149,7 @@ def build_invoice() -> fitz.Document:
 
 
 SAMPLES = [
-    ("sample-welcome.pdf", "Welcome to PDF Studio", build_welcome),
+    ("sample-welcome.pdf", "Welcome to Lapis", build_welcome),
     ("sample-quarterly-report.pdf", "Quarterly Report", build_report),
     ("sample-invoice.pdf", "Service Invoice", build_invoice),
 ]

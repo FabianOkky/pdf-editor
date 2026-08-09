@@ -13,7 +13,7 @@ it('seeds a demo library from the committed sample manifest', function () {
 
     expect($user->documents()->count())->toBe(3);
 
-    $document = $user->documents()->where('title', 'Welcome to PDF Studio')->first();
+    $document = $user->documents()->where('title', 'Welcome to Lapis')->first();
 
     expect($document)->not->toBeNull()
         ->and($document->source_type->value)->toBe('native')

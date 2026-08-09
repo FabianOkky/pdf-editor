@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "fabianokky/pdf-editor",
     "type": "project",
-    "description": "PDF Studio — non-destructive live PDF editing in the browser, with OCR, smart Word export and an AI assistant.",
+    "description": "Lapis — non-destructive live PDF editing in the browser, with OCR, smart Word export and an AI assistant.",
     "keywords": [
         "laravel",
         "livewire",

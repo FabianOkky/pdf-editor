@@ -33,7 +33,7 @@ test('the dashboard shows an empty state with no documents', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('No documents yet');
+        ->assertSee('Nothing here yet');
 });
 
 test('the dashboard only counts the current user’s documents', function () {
