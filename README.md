@@ -26,6 +26,7 @@ work that must touch PDF bytes or run ML.
 
 ## Table of contents
 
+- [Documentation](#documentation)
 - [Features](#features)
 - [The Golden Rule (fidelity)](#the-golden-rule-fidelity)
 - [Architecture](#architecture)
@@ -39,6 +40,24 @@ work that must touch PDF bytes or run ML.
 - [Engineering decisions](#engineering-decisions)
 - [Project status](#project-status)
 - [License](#license)
+
+---
+
+## Documentation
+
+Full reference documentation lives in [`docs/`](docs/).
+
+| Document | What it covers |
+|---|---|
+| [Getting started](docs/getting-started.md) | Prerequisites, install, run locally or with Docker, demo account |
+| [User guide](docs/user-guide.md) | Every feature end to end: upload, organize, edit, sign, OCR, export, AI |
+| [Architecture](docs/architecture.md) | The Golden Rule, the two-service design, request flows, layout |
+| [Data model](docs/data-model.md) | Database schema, models, relationships, enums |
+| [PDF service API](docs/pdf-service-api.md) | The REST contract between Laravel and the Python service |
+| [Configuration](docs/configuration.md) | Every environment variable for both services, with defaults |
+| [Testing](docs/testing.md) | Test suites, quality gates, how to run them, what is covered |
+| [Deployment](docs/deployment.md) | Docker Compose, VPS, managed split, production hardening |
+| [Troubleshooting](docs/troubleshooting.md) | Common failures and how to fix them |
 
 ---
 
@@ -126,7 +145,7 @@ pdf-editor/
 │   └── app/{routers,services,schemas,core}/
 ├── docker/                      # nginx / php / supervisor / entrypoint for the app image
 ├── docker-compose.yml           # db + app + queue + pdf-service
-└── .claude/plan/                # The phased build plan (source of truth across sessions)
+└── docs/                        # Reference documentation
 ```
 
 ### Laravel ↔ Python contract (endpoints)
@@ -229,7 +248,7 @@ composer install
 npm install
 cp .env.example .env          # set DB creds + a shared PDF_SERVICE_SECRET
 php artisan key:generate
-php artisan migrate --seed     # seeds demo@example.com / password + a sample library
+php artisan migrate --seed     # seeds fabian@example.com / password + a sample library
 npm run build                  # or `npm run dev` while developing
 ```
 
@@ -260,7 +279,11 @@ The AI assistant needs an LLM backend, configured in `pdf-service/.env`. Pick wh
 Without any of them the app still runs — upload, editing, page ops, OCR, Word export, extract-text
 and the offline `hash` embeddings all keep working; only the chat/summarize/translate calls error out.
 
-**Demo login:** `demo@example.com` / `password` (created by the seeder).
+**Demo login:** `fabian@example.com` / `password` (created by the seeder, along with a
+three-document starter library so every feature has something to work on).
+
+Full setup detail, including OCR language files and the AI backends, is in
+[docs/getting-started.md](docs/getting-started.md).
 
 ---
 
@@ -336,11 +359,18 @@ seeding) and the Python service by pytest (every route + service function, with 
 PDFs). The Python service is **mocked** in Laravel tests via HTTP fakes, and the LLM is faked on both
 sides — so the whole suite runs offline with no provider key.
 
+Two invariants are asserted directly, because they are the ones worth protecting: the original file is
+**byte-identical after a bake**, and **every path that hands the user a file** (download, Word export,
+page operations, split, merge) bakes pending edits first.
+
+CI runs both suites plus Pint, PHPStan (level 7), ruff and black on every push and pull request.
+See [docs/testing.md](docs/testing.md).
+
 ---
 
 ## Engineering decisions
 
-A few choices worth calling out (full rationale lives in `.claude/plan/`):
+A few choices worth calling out (the full reasoning is in [docs/architecture.md](docs/architecture.md)):
 
 - **Overlay / non-destructive editing** — edits are JSON ops baked onto a copy on demand, never a
   whole-file re-encode. This is the core fidelity guarantee.
@@ -361,11 +391,12 @@ A few choices worth calling out (full rationale lives in `.claude/plan/`):
 
 ## Project status
 
-All planned phases are built (foundation, document management, page operations, overlay editor, forms &
-signatures, smart Word export, AI assistant, and this polish/deploy phase). See `.claude/plan/STATUS.md`
-for the live board and decision log.
+Feature-complete: document management, page operations, the overlay editor, forms & signatures, the
+smart Word export, and the AI assistant are all built, tested and documented.
 
-This is a personal portfolio project.
+This is a personal portfolio project — it is meant to be cloned and tried. Everything runs locally
+with no paid service: the default AI backend is a local Ollama model that needs no API key, and the
+default embedding provider is an offline hash function.
 
 ---
 

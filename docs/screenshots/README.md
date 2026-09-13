@@ -2,7 +2,7 @@
 
 The root `README.md` references the images below. They are intentionally **not committed** —
 capture them from a running instance (seed first: `php artisan migrate:fresh --seed`, then log in
-as `demo@example.com` / `password`) and drop the PNGs/GIFs in this folder with these exact names.
+as `fabian@example.com` / `password`) and drop the PNGs/GIFs in this folder with these exact names.
 
 ## Capture checklist
 
