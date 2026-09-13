@@ -58,4 +58,4 @@ Everything else in the architecture follows from that constraint. See
 - Windows examples use Laravel Herd; macOS and Linux equivalents are given where they differ.
 - `pdf-service` always refers to the Python microservice in [`pdf-service/`](../pdf-service/).
 - "Active bytes" means the newest version of a document if one exists, otherwise the original
-  upload — see [Data model](data-model.md#document-versions).
+  upload — see [Data model](data-model.md#document_versions).
