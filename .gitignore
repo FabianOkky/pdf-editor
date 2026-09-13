@@ -17,11 +17,15 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 /auth.json
+/.claude
 /.fleet
 /.idea
+/.mcp.json
 /.nova
 /.vscode
 /.zed
+/CLAUDE.md
+/boost.json
 
 # Python pdf-service
 /pdf-service/.venv
@@ -29,6 +33,7 @@ yarn-error.log
 /pdf-service/**/__pycache__
 /pdf-service/.pytest_cache
 /pdf-service/.ruff_cache
+/.ruff_cache
 /pdf-service/.ocr_cache
 # Tesseract language data for OCR — downloaded locally, not committed (see tessdata/README.md).
 /pdf-service/tessdata/*.traineddata
