@@ -33,23 +33,23 @@ class EmbedResponse(BaseModel):
 class ContextChunk(BaseModel):
     """One retrieved excerpt the answer must be grounded in, tagged with its page."""
 
-    page_number: int
-    content: str
+    page_number: int = Field(ge=1)
+    content: str = Field(min_length=1, max_length=20_000)
 
 
 class ChatMessage(BaseModel):
     """A prior turn in the conversation (role is ``user`` or ``assistant``)."""
 
-    role: str
-    content: str
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=20_000)
 
 
 class ChatRequest(BaseModel):
     """A grounded question: the user's question, retrieved context, and prior turns."""
 
-    question: str
-    contexts: list[ContextChunk] = Field(default_factory=list)
-    history: list[ChatMessage] = Field(default_factory=list)
+    question: str = Field(min_length=1, max_length=4_000)
+    contexts: list[ContextChunk] = Field(default_factory=list, max_length=20)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=50)
     provider: Provider | None = None
 
 
@@ -63,8 +63,8 @@ class ChatResponse(BaseModel):
 class SummarizeRequest(BaseModel):
     """Text to summarize, with an optional human-readable scope label (e.g. ``"page 3"``)."""
 
-    text: str
-    scope: str | None = None
+    text: str = Field(min_length=1, max_length=100_000)
+    scope: str | None = Field(default=None, max_length=100)
     provider: Provider | None = None
 
 
@@ -78,8 +78,8 @@ class SummarizeResponse(BaseModel):
 class TranslateRequest(BaseModel):
     """Text to translate into ``target_language`` (a natural-language name, e.g. ``"French"``)."""
 
-    text: str
-    target_language: str
+    text: str = Field(min_length=1, max_length=100_000)
+    target_language: str = Field(min_length=1, max_length=64)
     provider: Provider | None = None
 
 

@@ -32,7 +32,16 @@ services:
     environment:
       PDF_SERVICE_SECRET: ${PDF_SERVICE_SECRET}
       PDF_SERVICE_ENV: ${APP_ENV:-production}
+      # LLM backend. Defaults to Ollama, which needs no API key; the assistant panel can still
+      # pick a different backend per request as long as its key is set below.
+      AI_PROVIDER: ${AI_DEFAULT_PROVIDER:-ollama}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      # An Ollama daemon on the Docker host, not in this network. host.docker.internal works on
+      # Docker Desktop; on Linux either add an extra_hosts entry or point this at the host IP.
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
       AI_EMBEDDING_PROVIDER: ${AI_EMBEDDING_PROVIDER:-hash}
       VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
     volumes:

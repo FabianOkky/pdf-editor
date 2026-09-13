@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -156,5 +157,17 @@ class Document extends Model
         $pageCount = $this->versions()->orderByDesc('version_number')->value('page_count');
 
         return is_int($pageCount) ? $pageCount : $this->page_count;
+    }
+
+    /**
+     * A safe, friendly PDF filename derived from the editable title. A user may include the
+     * extension while renaming, so remove one trailing ".pdf" before adding the canonical one.
+     */
+    public function downloadFilename(): string
+    {
+        $title = trim($this->title);
+        $base = Str::of($title)->replaceMatches('/\.pdf$/i', '')->trim()->value();
+
+        return ($base === '' ? 'document' : $base).'.pdf';
     }
 }

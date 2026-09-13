@@ -144,6 +144,23 @@ it('shows a clear error and creates nothing when the service is unreachable', fu
     expect(Document::count())->toBe(0);
 });
 
+it('explains how to fix a password-protected PDF upload', function () {
+    $user = User::factory()->create();
+    Http::fake(['*/pdf/info' => Http::response([
+        'detail' => 'PDF is encrypted/password-protected.',
+    ], 422)]);
+
+    Livewire::actingAs($user)
+        ->test(Index::class)
+        ->set('file', UploadedFile::fake()->create('protected.pdf', 100, 'application/pdf'))
+        ->call('save')
+        ->assertHasErrors([
+            'file' => __('This PDF is password-protected. Remove the password, then upload it again.'),
+        ]);
+
+    expect(Document::count())->toBe(0);
+});
+
 it('reports the service as unavailable (not a bad PDF) when it cannot be reached', function () {
     $user = User::factory()->create();
     Http::fake(['*/pdf/info' => fn () => throw new ConnectionException('Connection refused')]);

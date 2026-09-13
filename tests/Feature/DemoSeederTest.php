@@ -2,7 +2,9 @@
 
 use App\Models\Document;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoDocumentsSeeder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 it('seeds a demo library from the committed sample manifest', function () {
@@ -31,4 +33,29 @@ it('is idempotent and skips users who already have documents', function () {
     (new DemoDocumentsSeeder)->run($user);
 
     expect($user->documents()->count())->toBe(1);
+});
+
+it('seeds the demo account with a working password and a starter library', function () {
+    Storage::fake('pdfs');
+
+    $this->seed(DatabaseSeeder::class);
+
+    $demo = User::where('email', DatabaseSeeder::DEMO_EMAIL)->first();
+
+    expect($demo)->not->toBeNull()
+        ->and($demo->name)->toBe('Fabian Okky')
+        ->and(Hash::check(DatabaseSeeder::DEMO_PASSWORD, $demo->password))->toBeTrue()
+        ->and($demo->documents()->count())->toBe(3);
+});
+
+it('can be re-run without duplicating the demo account', function () {
+    Storage::fake('pdfs');
+
+    $this->seed(DatabaseSeeder::class);
+    $this->seed(DatabaseSeeder::class);
+
+    $demo = User::where('email', DatabaseSeeder::DEMO_EMAIL);
+
+    expect($demo->count())->toBe(1)
+        ->and($demo->first()->documents()->count())->toBe(3);
 });

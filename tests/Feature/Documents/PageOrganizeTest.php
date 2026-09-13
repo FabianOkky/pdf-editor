@@ -2,6 +2,7 @@
 
 use App\Livewire\Documents\Organize;
 use App\Models\Document;
+use App\Models\DocumentOverlay;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -98,4 +99,36 @@ it('drops out-of-range pages before calling the service', function () {
         return str_contains($spec['contents'], '"source":1')
             && ! str_contains($spec['contents'], '"source":99');
     });
+});
+
+it('applies pending overlays before organizing pages', function () {
+    $user = User::factory()->create();
+    $document = Document::factory()->for($user)->create([
+        'page_count' => 2,
+        'path' => 'documents/o.pdf',
+    ]);
+    Storage::disk('pdfs')->put($document->path, '%PDF original');
+    DocumentOverlay::factory()->for($document)->create(['page_number' => 1]);
+
+    Http::fake([
+        '*/pdf/bake' => Http::response(pdfOutput(2, '%PDF with edits')),
+        '*/pdf/pages' => Http::response(['outputs' => [pdfOutput(2, '%PDF organized edits')]]),
+        '*/pdf/thumbnails' => Http::response(['thumbnails' => []]),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(Organize::class, ['document' => $document])
+        ->call('save', [['source' => 2, 'rotate' => 0], ['source' => 1, 'rotate' => 0]])
+        ->assertHasNoErrors();
+
+    expect($document->overlays()->count())->toBe(0)
+        ->and($document->versions()->count())->toBe(2);
+
+    Http::assertSentInOrder([
+        fn ($request) => str_contains($request->url(), '/pdf/bake'),
+        fn ($request) => str_contains($request->url(), '/pdf/pages')
+            && collect($request->data())->where('name', 'files')->contains(
+                fn (array $part): bool => $part['contents'] === '%PDF with edits'
+            ),
+    ]);
 });

@@ -45,6 +45,10 @@ class Organize extends Component
         }
 
         try {
+            if ($this->document->overlays()->exists()) {
+                $pageOperations->bake($this->document, Auth::user());
+            }
+
             $pageOperations->organize($this->document, $pages, Auth::user());
         } catch (Throwable $exception) {
             report($exception);

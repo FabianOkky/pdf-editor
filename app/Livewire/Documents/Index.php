@@ -10,6 +10,7 @@ use App\Services\PdfServiceClient;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +21,7 @@ use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 /**
@@ -73,6 +75,16 @@ class Index extends Component
         } catch (ConnectionException $exception) {
             report($exception);
             $this->addError('file', __('The PDF processing service is unavailable right now. Please try again in a moment.'));
+
+            return;
+        } catch (RequestException $exception) {
+            report($exception);
+
+            $message = data_get($exception->response->json(), 'detail') === 'PDF is encrypted/password-protected.'
+                ? __('This PDF is password-protected. Remove the password, then upload it again.')
+                : __('We could not read this PDF. Please try a different file.');
+
+            $this->addError('file', $message);
 
             return;
         } catch (Throwable $exception) {
@@ -135,6 +147,8 @@ class Index extends Component
         $document = $this->ownedDocument((int) $this->renamingId);
         $this->authorize('update', $document);
 
+        $this->renameTitle = trim($this->renameTitle);
+
         $validated = $this->validate([
             'renameTitle' => ['required', 'string', 'max:255'],
         ]);
@@ -157,8 +171,57 @@ class Index extends Component
         $document->delete();
 
         $this->selected = array_values(array_filter($this->selected, fn ($id): bool => (int) $id !== $documentId));
+        unset($this->documents, $this->trashedDocuments);
         $this->resetPage();
         Flux::toast(variant: 'success', text: __('Document deleted.'));
+    }
+
+    /**
+     * Restore one of the current user's soft-deleted documents from the library trash.
+     */
+    public function restore(int $documentId): void
+    {
+        $document = Document::onlyTrashed()
+            ->where('user_id', Auth::id())
+            ->find($documentId);
+
+        if ($document === null) {
+            return;
+        }
+
+        $this->authorize('restore', $document);
+
+        $document->restore();
+
+        unset($this->documents, $this->trashedDocuments);
+        $this->resetPage();
+        Flux::toast(variant: 'success', text: __('Document restored.'));
+    }
+
+    /**
+     * Download from the library without losing autosaved overlay edits. Pending edits are
+     * flattened onto a new version first, matching the viewer's Download action.
+     */
+    public function downloadEdited(int $documentId, PageOperationService $pageOperations): ?StreamedResponse
+    {
+        $document = $this->ownedDocument($documentId);
+        $this->authorize('download', $document);
+
+        try {
+            if ($document->overlays()->exists()) {
+                $pageOperations->bake($document, Auth::user());
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->addError('download', __('We could not apply your edits for download. Please try again.'));
+
+            return null;
+        }
+
+        return Storage::disk($document->disk)->download(
+            $document->activePath(),
+            $document->downloadFilename(),
+        );
     }
 
     /**
@@ -202,6 +265,12 @@ class Index extends Component
         }
 
         try {
+            foreach ($documents as $document) {
+                if ($document->overlays()->exists()) {
+                    $pageOperations->bake($document, Auth::user());
+                }
+            }
+
             $merged = $pageOperations->merge($documents, Auth::user());
         } catch (Throwable $exception) {
             report($exception);
@@ -233,6 +302,20 @@ class Index extends Component
     }
 
     /**
+     * Soft-deleted documents owned by the current user, newest deletion first.
+     *
+     * @return Collection<int, Document>
+     */
+    #[Computed]
+    public function trashedDocuments(): Collection
+    {
+        return Document::onlyTrashed()
+            ->where('user_id', Auth::id())
+            ->latest('deleted_at')
+            ->get();
+    }
+
+    /**
      * The selected documents resolved to models, in the chosen order and scoped to the user
      * (so a tampered selection can never include another user's document).
      *
@@ -241,7 +324,7 @@ class Index extends Component
     #[Computed]
     public function selectedDocuments(): Collection
     {
-        $ids = array_map('intval', $this->selected);
+        $ids = array_values(array_unique(array_map('intval', $this->selected)));
 
         if ($ids === []) {
             return collect();

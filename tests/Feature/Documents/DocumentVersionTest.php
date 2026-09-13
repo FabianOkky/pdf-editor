@@ -2,8 +2,10 @@
 
 use App\Livewire\Documents\Show;
 use App\Models\Document;
+use App\Models\DocumentOverlay;
 use App\Models\DocumentVersion;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -37,6 +39,30 @@ it('restores an older version by appending a copy as the new latest version', fu
     expect($latest->version_number)->toBe(3)
         ->and($latest->page_count)->toBe(2)
         ->and(Storage::disk('pdfs')->get($latest->path))->toBe('%PDF-v1-bytes');
+});
+
+it('preserves pending edits as a version before restoring an older version', function () {
+    $user = User::factory()->create();
+    $document = Document::factory()->for($user)->create(['path' => 'documents/original.pdf']);
+    Storage::disk('pdfs')->put($document->path, '%PDF original');
+    $version = DocumentVersion::factory()->for($document)->create([
+        'version_number' => 1,
+        'path' => 'documents/versions/v1.pdf',
+        'created_by' => $user->id,
+    ]);
+    Storage::disk('pdfs')->put($version->path, '%PDF v1');
+    DocumentOverlay::factory()->for($document)->create();
+    Http::fake(['*/pdf/bake' => Http::response(pdfOutput(1, '%PDF pending edits'))]);
+
+    Livewire::actingAs($user)
+        ->test(Show::class, ['document' => $document])
+        ->call('restoreVersion', $version->id)
+        ->assertHasNoErrors();
+
+    expect($document->overlays()->count())->toBe(0)
+        ->and($document->versions()->count())->toBe(3)
+        ->and(Storage::disk('pdfs')->get($document->versions()->where('version_number', 2)->value('path')))->toBe('%PDF pending edits')
+        ->and(Storage::disk('pdfs')->get($document->versions()->where('version_number', 3)->value('path')))->toBe('%PDF v1');
 });
 
 it('streams a version inline to the owner', function () {

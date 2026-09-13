@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.services import ai_llm
 
 # --- /ai/embed -------------------------------------------------------------------------------
@@ -60,6 +60,15 @@ def test_chat_requires_secret(client):
     assert client.post("/ai/chat", json={"question": "hi"}).status_code == 401
 
 
+def test_chat_rejects_blank_or_oversized_questions(client, secret):
+    headers = {"X-Pdf-Secret": secret}
+
+    assert client.post("/ai/chat", headers=headers, json={"question": ""}).status_code == 422
+    assert (
+        client.post("/ai/chat", headers=headers, json={"question": "x" * 4001}).status_code == 422
+    )
+
+
 def test_chat_returns_grounded_answer(client, secret, monkeypatch):
     captured = {}
 
@@ -89,6 +98,7 @@ def test_chat_returns_grounded_answer(client, secret, monkeypatch):
     assert body["model"] == "claude-opus-4-8"
     # The grounded prompt carries the page-tagged excerpt and the question; history is replayed.
     assert "page" in captured["system"].lower()
+    assert "same language" in captured["system"].lower()
     assert captured["messages"][0] == {"role": "user", "content": "hi"}
     assert "[Page 3]" in captured["messages"][-1]["content"]
     assert "What is the total amount?" in captured["messages"][-1]["content"]
@@ -116,6 +126,7 @@ def test_summarize_returns_summary(client, secret, monkeypatch):
     captured = {}
 
     def fake_complete(system, messages, max_tokens=None, provider=None):
+        captured["system"] = system
         captured["messages"] = messages
         return "A short summary."
 
@@ -130,6 +141,7 @@ def test_summarize_returns_summary(client, secret, monkeypatch):
 
     assert body["summary"] == "A short summary."
     assert body["model"] == "claude-opus-4-8"
+    assert "same language" in captured["system"].lower()
     assert "page 2" in captured["messages"][0]["content"]
     assert "quarterly results" in captured["messages"][0]["content"]
 
@@ -157,6 +169,16 @@ def test_translate_returns_translation(client, secret, monkeypatch):
     assert body["target_language"] == "French"
     assert body["model"] == "claude-opus-4-8"
     assert "French" in captured["messages"][0]["content"]
+
+
+def test_translate_rejects_an_oversized_language_name(client, secret):
+    response = client.post(
+        "/ai/translate",
+        headers={"X-Pdf-Secret": secret},
+        json={"text": "Hello", "target_language": "x" * 65},
+    )
+
+    assert response.status_code == 422
 
 
 # --- provider toggle -------------------------------------------------------------------------
@@ -202,3 +224,10 @@ def test_complete_dispatches_on_request_provider(monkeypatch):
     assert ai_llm._complete("sys", [{"role": "user", "content": "hi"}], provider="ollama") == (
         "from-ollama"
     )
+
+
+def test_default_provider_needs_no_api_key(monkeypatch):
+    """A fresh clone has no provider key, so the fallback backend must be the keyless one."""
+    monkeypatch.delenv("AI_PROVIDER", raising=False)
+
+    assert Settings().ai_provider == "ollama"

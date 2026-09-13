@@ -123,7 +123,9 @@ class DocumentFileController extends Controller
      */
     protected function versionFilename(Document $document, DocumentVersion $version): string
     {
-        return $document->title.' (v'.$version->version_number.').pdf';
+        $base = preg_replace('/\.pdf$/i', '', $document->downloadFilename()) ?? 'document';
+
+        return $base.' (v'.$version->version_number.').pdf';
     }
 
     /**
@@ -131,8 +133,6 @@ class DocumentFileController extends Controller
      */
     protected function downloadName(Document $document): string
     {
-        $title = trim($document->title);
-
-        return ($title === '' ? 'document' : $title).'.pdf';
+        return $document->downloadFilename();
     }
 }

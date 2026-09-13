@@ -23,6 +23,14 @@ use Throwable;
  */
 class AiAssistant extends Component
 {
+    private const MAX_QUESTION_CHARS = 4_000;
+
+    /** Languages intentionally offered by the translation UI and accepted server-side. */
+    private const TARGET_LANGUAGES = [
+        'English', 'Indonesian', 'Spanish', 'French', 'German', 'Italian',
+        'Portuguese', 'Dutch', 'Japanese', 'Korean', 'Chinese', 'Arabic',
+    ];
+
     public Document $document;
 
     /** Active feature tab: chat | summarize | translate. */
@@ -88,7 +96,20 @@ class AiAssistant extends Component
     }
 
     /**
-     * A valid provider key: the given one if offered, otherwise the configured default.
+     * Translation targets rendered by the select. Keeping this list server-owned prevents a
+     * tampered Livewire value from turning the language name into prompt instructions.
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function targetLanguages(): array
+    {
+        return self::TARGET_LANGUAGES;
+    }
+
+    /**
+     * A valid provider key: the given one if offered, otherwise the configured default, and
+     * finally the first backend on offer — so the key is always one the toggle actually lists.
      */
     protected function normalizeProvider(string $value): string
     {
@@ -98,7 +119,13 @@ class AiAssistant extends Component
             return $value;
         }
 
-        return (string) config('services.ai.default_provider');
+        $default = (string) config('services.ai.default_provider');
+
+        if (array_key_exists($default, $providers)) {
+            return $default;
+        }
+
+        return (string) (array_key_first($providers) ?? $default);
     }
 
     /**
@@ -132,8 +159,10 @@ class AiAssistant extends Component
     #[Computed]
     public function model(): string
     {
+        $provider = $this->resolvedProvider();
+
         return (string) config(
-            "services.ai.providers.{$this->provider}.model",
+            "services.ai.providers.{$provider}.model",
             config('services.ai.model'),
         );
     }
@@ -151,14 +180,30 @@ class AiAssistant extends Component
             return;
         }
 
+        if (mb_strlen($question) > self::MAX_QUESTION_CHARS) {
+            $this->addError('question', __('Keep your question under :max characters.', [
+                'max' => self::MAX_QUESTION_CHARS,
+            ]));
+
+            return;
+        }
+
         if ($this->rateLimited('question')) {
             return;
         }
 
+        $conversation = $this->conversation($question);
+
         try {
-            $assistant->ask($this->conversation($question), $question, $this->resolvedProvider());
+            $assistant->ask($conversation, $question, $this->resolvedProvider());
         } catch (Throwable $exception) {
             report($exception);
+
+            if ($conversation->messages()->doesntExist()) {
+                $conversation->delete();
+                $this->conversationId = null;
+            }
+
             $this->addError('question', __('The assistant could not answer just now. Please try again.'));
 
             return;
@@ -201,7 +246,9 @@ class AiAssistant extends Component
     {
         $this->authorize('view', $this->document);
 
-        if (trim($this->targetLanguage) === '') {
+        $targetLanguage = trim($this->targetLanguage);
+
+        if (! in_array($targetLanguage, self::TARGET_LANGUAGES, true)) {
             $this->addError('translation', __('Choose a language to translate into.'));
 
             return;
@@ -214,7 +261,7 @@ class AiAssistant extends Component
         $this->translation = null;
 
         try {
-            $result = $assistant->translate($this->document, trim($this->targetLanguage), $this->pageScope(), $this->resolvedProvider());
+            $result = $assistant->translate($this->document, $targetLanguage, $this->pageScope(), $this->resolvedProvider());
         } catch (Throwable $exception) {
             report($exception);
             $this->addError('translation', __('We could not translate this document. Please try again.'));

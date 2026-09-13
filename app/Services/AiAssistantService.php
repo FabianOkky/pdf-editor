@@ -6,6 +6,7 @@ use App\Enums\AiMessageRole;
 use App\Models\AiConversation;
 use App\Models\AiMessage;
 use App\Models\Document;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
@@ -38,11 +39,6 @@ class AiAssistantService
             ])
             ->all());
 
-        $conversation->messages()->create([
-            'role' => AiMessageRole::User,
-            'content' => $question,
-        ]);
-
         $this->rag->ensureIndexed($document);
         $contexts = $this->rag->retrieve($document, $question);
 
@@ -63,11 +59,18 @@ class AiAssistantService
             ->values()
             ->all();
 
-        return $conversation->messages()->create([
-            'role' => AiMessageRole::Assistant,
-            'content' => $result['answer'],
-            'meta' => $pages === [] ? null : ['pages' => $pages],
-        ]);
+        return DB::transaction(function () use ($conversation, $question, $result, $pages): AiMessage {
+            $conversation->messages()->create([
+                'role' => AiMessageRole::User,
+                'content' => $question,
+            ]);
+
+            return $conversation->messages()->create([
+                'role' => AiMessageRole::Assistant,
+                'content' => $result['answer'],
+                'meta' => $pages === [] ? null : ['pages' => $pages],
+            ]);
+        });
     }
 
     /**

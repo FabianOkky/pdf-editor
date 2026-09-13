@@ -44,7 +44,10 @@ class Settings:
         # reaches Laravel or the browser. ``AI_PROVIDER`` selects the backend for chat /
         # summarize / translate: "anthropic" (Claude), "gemini" (Google AI Studio), or
         # "ollama" (a local Ollama daemon — offline, no API key).
-        self.ai_provider: str = os.getenv("AI_PROVIDER", "anthropic").lower()
+        #
+        # Defaults to the keyless backend so a fresh clone works without any credential; the
+        # panel's per-request provider always wins over this fallback.
+        self.ai_provider: str = os.getenv("AI_PROVIDER", "ollama").lower()
         self.anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
         self.ai_model: str = os.getenv("AI_MODEL", "claude-opus-4-8")
         # Google Gemini (AI Studio REST API). Needs GEMINI_API_KEY.

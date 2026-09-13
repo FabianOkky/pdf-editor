@@ -145,7 +145,7 @@
 
                 <div class="flex items-end gap-2">
                     <flux:select wire:model="targetLanguage" :label="__('Language')" class="flex-1">
-                        @foreach (['English', 'Indonesian', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Dutch', 'Japanese', 'Korean', 'Chinese', 'Arabic'] as $language)
+                        @foreach ($this->targetLanguages as $language)
                             <flux:select.option value="{{ $language }}">{{ __($language) }}</flux:select.option>
                         @endforeach
                     </flux:select>

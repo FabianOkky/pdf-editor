@@ -2,6 +2,7 @@
 
 use App\Enums\DocumentOverlayType;
 use App\Jobs\ExportDocumentJob;
+use App\Livewire\Documents\Index;
 use App\Livewire\Documents\Show;
 use App\Models\Document;
 use App\Models\DocumentOverlay;
@@ -169,4 +170,33 @@ it('downloads with pending edits applied first', function () {
         ->and(Storage::disk('pdfs')->get($document->activePath()))->toBe('%PDF flattened');
 
     $response->assertFileDownloaded('Quarterly Report.pdf');
+});
+
+it('applies pending edits before downloading from the library menu', function () {
+    fakePdfBake(pageCount: 1, bytes: '%PDF flattened from library');
+
+    $user = User::factory()->create();
+    $document = documentWithBytes($user);
+    DocumentOverlay::factory()->for($document)->create(['page_number' => 1]);
+
+    $response = Livewire::actingAs($user)
+        ->test(Index::class)
+        ->call('downloadEdited', $document->id)
+        ->assertHasNoErrors();
+
+    expect($document->overlays()->count())->toBe(0)
+        ->and(Storage::disk('pdfs')->get($document->activePath()))->toBe('%PDF flattened from library');
+
+    $response->assertFileDownloaded('Quarterly Report.pdf');
+});
+
+it('does not duplicate the pdf extension in generated download names', function () {
+    $user = User::factory()->create();
+    $document = documentWithBytes($user);
+    $document->update(['title' => 'Quarterly Report.pdf']);
+
+    Livewire::actingAs($user)
+        ->test(Show::class, ['document' => $document->fresh()])
+        ->call('downloadEdited')
+        ->assertFileDownloaded('Quarterly Report.pdf');
 });

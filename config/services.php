@@ -51,7 +51,7 @@ return [
     | `model` is informational (shown in the UI); the actual model is configured in pdf-service.
     */
     'ai' => [
-        'model' => env('AI_MODEL', 'claude-opus-4-8'),
+        'model' => env('AI_MODEL', 'qwen2.5:3b'),
         'language' => env('AI_OCR_LANGUAGE', 'eng'),
         // Which LLM backend the assistant uses, switchable per request from the panel toggle.
         // `default_provider` is the initial choice; `providers` lists what the toggle offers

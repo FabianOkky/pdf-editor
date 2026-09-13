@@ -26,12 +26,16 @@ _CHAT_SYSTEM = (
     "like [Page N]. Cite the page(s) you relied on in parentheses, e.g. (p. 3). If the answer "
     "is not contained in the context, say you could not find it in the document rather than "
     "guessing. Be concise and accurate."
+    " Reply in the same language as the user's latest question. If the question mixes "
+    "languages, use the language of its main request."
 )
 
 _SUMMARIZE_SYSTEM = (
     "You summarize documents faithfully. Produce a clear, well-structured summary that "
     "captures the key points, decisions, figures, and conclusions. Do not invent information "
     "that is not present in the text. Use short paragraphs or bullet points."
+    " Write the summary in the same language as the source text; when the source mixes "
+    "languages, use its predominant language."
 )
 
 _TRANSLATE_SYSTEM = (

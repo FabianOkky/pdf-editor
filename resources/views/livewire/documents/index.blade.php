@@ -6,10 +6,21 @@
             <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">{{ __('Upload, edit, organize and export. Originals are kept untouched.') }}</p>
         </div>
 
-        <flux:modal.trigger name="upload">
-            <flux:button variant="primary" icon="arrow-up-tray">{{ __('Upload PDF') }}</flux:button>
-        </flux:modal.trigger>
+        <div class="flex items-center gap-2">
+            @if ($this->trashedDocuments->isNotEmpty())
+                <flux:modal.trigger name="trash">
+                    <flux:button variant="ghost" icon="trash">
+                        {{ __('Trash') }} <span class="text-zinc-400">({{ $this->trashedDocuments->count() }})</span>
+                    </flux:button>
+                </flux:modal.trigger>
+            @endif
+            <flux:modal.trigger name="upload">
+                <flux:button variant="primary" icon="arrow-up-tray">{{ __('Upload PDF') }}</flux:button>
+            </flux:modal.trigger>
+        </div>
     </div>
+
+    <flux:error name="download" />
 
     @if ($this->documents->isEmpty())
         <div class="relative flex flex-1 flex-col items-center justify-center gap-5 overflow-hidden rounded-2xl border border-dashed border-zinc-300 p-14 text-center dark:border-zinc-700">
@@ -92,7 +103,7 @@
                                     <flux:menu.item href="{{ route('documents.show', $document) }}" wire:navigate icon="eye">{{ __('Open') }}</flux:menu.item>
                                     <flux:menu.item href="{{ route('documents.editor', $document) }}" wire:navigate icon="pencil-square">{{ __('Edit') }}</flux:menu.item>
                                     <flux:menu.separator />
-                                    <flux:menu.item href="{{ route('documents.download', $document) }}" icon="arrow-down-tray">{{ __('Download') }}</flux:menu.item>
+                                    <flux:menu.item wire:click="downloadEdited({{ $document->id }})" icon="arrow-down-tray">{{ __('Download') }}</flux:menu.item>
                                     @if ($document->latestVersion)
                                         <flux:menu.item href="{{ route('documents.download.original', $document) }}" icon="archive-box">{{ __('Download original') }}</flux:menu.item>
                                     @endif
@@ -156,6 +167,32 @@
                 <flux:button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="file,save">{{ __('Upload') }}</flux:button>
             </div>
         </form>
+    </flux:modal>
+
+    {{-- Trash modal: documents are soft-deleted so their immutable originals remain recoverable. --}}
+    <flux:modal name="trash" class="md:w-[32rem]">
+        <div class="flex flex-col gap-6">
+            <div>
+                <flux:heading size="lg">{{ __('Trash') }}</flux:heading>
+                <flux:text class="mt-2">{{ __('Deleted documents stay here so you can restore them without losing the original file.') }}</flux:text>
+            </div>
+
+            <div class="flex max-h-96 flex-col gap-2 overflow-y-auto">
+                @forelse ($this->trashedDocuments as $trashedDocument)
+                    <div wire:key="trashed-document-{{ $trashedDocument->id }}" class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                        <div class="min-w-0">
+                            <div class="truncate text-sm font-medium" title="{{ $trashedDocument->title }}">{{ $trashedDocument->title }}</div>
+                            <div class="text-xs text-zinc-500">{{ __('Deleted :time', ['time' => $trashedDocument->deleted_at?->diffForHumans()]) }}</div>
+                        </div>
+                        <flux:button wire:click="restore({{ $trashedDocument->id }})" size="sm" variant="ghost" icon="arrow-uturn-left">
+                            {{ __('Restore') }}
+                        </flux:button>
+                    </div>
+                @empty
+                    <flux:text>{{ __('Trash is empty.') }}</flux:text>
+                @endforelse
+            </div>
+        </div>
     </flux:modal>
 
     {{-- Merge modal --}}

@@ -175,11 +175,9 @@ class Show extends Component
             return null;
         }
 
-        $title = trim($this->document->title);
-
         return Storage::disk($this->document->disk)->download(
             $this->document->activePath(),
-            ($title === '' ? 'document' : $title).'.pdf',
+            $this->document->downloadFilename(),
         );
     }
 
@@ -193,6 +191,10 @@ class Show extends Component
         $spec = $this->buildSplitSpec();
 
         if ($spec === null) {
+            return;
+        }
+
+        if (! $this->applyEdits($pageOperations)) {
             return;
         }
 
@@ -223,6 +225,10 @@ class Show extends Component
         $this->authorize('update', $this->document);
 
         $version = $this->document->versions()->findOrFail($versionId);
+
+        if (! $this->applyEdits($pageOperations)) {
+            return;
+        }
 
         $pageOperations->restore($this->document, $version, Auth::user());
 

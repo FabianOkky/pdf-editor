@@ -2,6 +2,7 @@
 
 use App\Livewire\Documents\Show;
 use App\Models\Document;
+use App\Models\DocumentOverlay;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -97,4 +98,38 @@ it('rejects a chunk size that would not split the document', function () {
         ->assertHasErrors('split');
 
     expect(Document::where('user_id', $user->id)->count())->toBe(1);
+});
+
+it('applies pending overlays before splitting', function () {
+    $user = User::factory()->create();
+    $document = Document::factory()->for($user)->create([
+        'page_count' => 2,
+        'path' => 'documents/d.pdf',
+    ]);
+    Storage::disk('pdfs')->put($document->path, '%PDF original');
+    DocumentOverlay::factory()->for($document)->create(['page_number' => 1]);
+
+    Http::fake([
+        '*/pdf/bake' => Http::response(pdfOutput(2, '%PDF with edits')),
+        '*/pdf/pages' => Http::response(['outputs' => [pdfOutput(1), pdfOutput(1)]]),
+        '*/pdf/thumbnails' => Http::response(['thumbnails' => []]),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(Show::class, ['document' => $document])
+        ->set('splitEvery', 1)
+        ->call('split')
+        ->assertHasNoErrors();
+
+    expect($document->overlays()->count())->toBe(0);
+
+    Http::assertSentInOrder([
+        fn ($request) => str_contains($request->url(), '/pdf/bake'),
+        fn ($request) => str_contains($request->url(), '/pdf/pages')
+            && collect($request->data())->where('name', 'files')->contains(
+                fn (array $part): bool => $part['contents'] === '%PDF with edits'
+            ),
+        fn ($request) => str_contains($request->url(), '/pdf/thumbnails'),
+        fn ($request) => str_contains($request->url(), '/pdf/thumbnails'),
+    ]);
 });
